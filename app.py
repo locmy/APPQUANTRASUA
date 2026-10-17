@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
-st.image("TRASUA.jpg")
+st.image("Screenshot_20261017_170859_Hypic.jpg")
 # ---------------------------------------------------------
 # CẤU HÌNH TRANG & CƠ SỞ DỮ LIỆU SẢN PHẨM
 # ---------------------------------------------------------
@@ -31,9 +31,9 @@ SIZE_OPTIONS = {
 
 TOPPING_OPTIONS = {
     "Trân châu đen": 5000,
-    "Trân châu trắng": 7000,
+    "Trân châu trắng": 5000,
     "Thạch trái cây": 5000,
-    "Pudding trứng": 8000,
+    "Pudding trứng": 10000,
     "Kem Cheese": 10000
 }
 
@@ -77,7 +77,7 @@ def create_txt_invoice(customer_name, cart, total_amount, discount, final_amount
 # ---------------------------------------------------------
 # GIAO DIỆN CHÍNH
 # ---------------------------------------------------------
-st.title("QUÁN TRÀ SỮA MR BÌNH")
+st.title("QUÁN TRÀ SỮA ZZZ")
 st.markdown("---")
 
 col_left, col_right = st.columns([1.1, 0.9])
