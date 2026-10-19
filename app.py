@@ -14,15 +14,15 @@ st.set_page_config(
 
 # ---------------------------------------------------------
 IMAGE_URLS = {
-    "Trà Sữa Truyền Thống": "",
-    "Trà Sữa Trân Châu Đường Đen": "",
-    "Trà Sữa Thái Xanh": "",
-    "Trà Sữa Ô Long": "",
-    "Matcha Latte": "",
-    "Trà Đào Cam Sả": "",
-    "Trà Dâu Tằm": "",
-    "Trà Atiso Hạt Chia": "",
-    "Lục Trà Lựu Nha Đam": "",
+    "Trà Sữa Truyền Thống": "IMG_be364db8-ba92-4de2-94b3-e19fabc24223~2.jpg",
+    "Trà Sữa Trân Châu Đường Đen": "Screenshot_20261019_173653_Hypic.jpg",
+    "Trà Sữa Thái Xanh": "retouch_2026101917475806.jpg",
+    "Trà Sữa Ô Long": "IMG_188e1380-3bc7-465b-bd10-5705d2e84719.jpg",
+    "Matcha Latte": "IMG_9ea76e06-da48-4efb-8b28-972ef95d5262.jpg",
+    "Trà Đào Cam Sả": "IMG_7bd03c4e-527a-48b3-8a47-703262a6a50b.jpg",
+    "Trà Dâu Tằm": "IMG_90800819-5085-4b40-b37b-4c4a278068d7.jpg",
+    "Trà Atiso Hạt Chia": "retouch_2026101918013212.jpg",
+    "Lục Trà Lựu Nha Đam": "Screenshot_20261019_180339_Google.jpg",
 }
 
 # Ba món best seller
