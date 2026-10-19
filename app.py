@@ -1,4 +1,3 @@
-
 import streamlit as st
 import random
 from datetime import datetime
@@ -238,7 +237,7 @@ menu_tab, order_tab, payment_tab = st.tabs(
 # TAB 1: MENU
 # =========================================================
 with menu_tab:
-    st.header("📋 Menu trà sữa")
+    st.header("📋 Menu Tiệm trà ZZZ")
 
     st.write("Giá size S là giá cơ bản. Size M thêm 5.000 đ, size L thêm 10.000 đ.")
 
