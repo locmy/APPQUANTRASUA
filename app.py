@@ -1,83 +1,45 @@
 
 import streamlit as st
-import pandas as pd
 import random
 from datetime import datetime
 from pathlib import Path
-import html
 
 # =========================================================
-# 1. CẤU HÌNH TRANG
+# CẤU HÌNH TRANG
 # =========================================================
 st.set_page_config(
-    page_title="QUÁN TRÀ SỮA ZZZ",
+    page_title="Hệ Thống Tính Tiền Trà Sữa",
     page_icon="🧋",
     layout="wide"
 )
 
-st.markdown("""
-<style>
-.stApp {
-    background-color: #fffaf5;
+# =========================================================
+# =========================================================
+IMAGE_URLS = {
+    "Trà Sữa Truyền Thống": "images/IMG_be364db8-ba92-4de2-94b3-e19fabc24223~2.jpg",
+    "Trà Sữa Trân Châu Đường Đen": "images/Screenshot_20261019_173653_Hypic.jpg",
+    "Trà Sữa Thái Xanh": "images/retouch_2026101917475806.jpg",
+    "Trà Sữa Ô Long": "images/IMG_188e1380-3bc7-465b-bd10-5705d2e84719.jpg",
+    "Matcha Latte": "images/IMG_9ea76e06-da48-4efb-8b28-972ef95d5262.jpg",
+    "Trà Đào Cam Sả": "images/IMG_7bd03c4e-527a-48b3-8a47-703262a6a50b.jpg",
+    "Trà Atiso Hạt Chia": "images/retouch_2026101918013212.jpg",
+    "Lục Trà Lựu Nha Đam": "images/Screenshot_20261019_180339_Google.jpg",
+    "Trà Dâu Tằm": "images/IMG_90800819-5085-4b40-b37b-4c4a278068d7.jpg",
 }
-h1, h2, h3 {
-    color: #743c28;
-}
-div.stButton > button {
-    border-radius: 10px;
-    font-weight: 600;
-}
-div[data-testid="stMetric"] {
-    background: #fff1e5;
-    padding: 12px;
-    border-radius: 12px;
-}
-</style>
-""", unsafe_allow_html=True)
 
 # =========================================================
-# 2. MENU VÀ GIÁ BÁN
+# MENU VÀ GIÁ
 # =========================================================
-MENU_TEA = {
+MENU = {
     "Trà Sữa Truyền Thống": 30000,
     "Trà Sữa Trân Châu Đường Đen": 35000,
     "Trà Sữa Thái Xanh": 32000,
     "Trà Sữa Ô Long": 35000,
     "Matcha Latte": 38000,
     "Trà Đào Cam Sả": 35000,
+    "Trà Dâu Tằm": 32000,
     "Trà Atiso Hạt Chia": 35000,
     "Lục Trà Lựu Nha Đam": 35000,
-    "Trà Dâu Tằm": 32000,
-}
-
-# Các ảnh đặt cùng thư mục với app.py
-MENU_IMAGES = {
-    "Trà Sữa Truyền Thống":
-        "IMG_be364db8-ba92-4de2-94b3-e19fabc24223~2.jpg",
-
-    "Trà Sữa Trân Châu Đường Đen":
-        "Screenshot_20261019_173653_Hypic.jpg",
-
-    "Trà Sữa Thái Xanh":
-        "retouch_2026101917475806.jpg",
-
-    "Trà Sữa Ô Long":
-        "IMG_188e1380-3bc7-465b-bd10-5705d2e84719.jpg",
-
-    "Matcha Latte":
-        "IMG_9ea76e06-da48-4efb-8b28-972ef95d5262.jpg",
-
-    "Trà Đào Cam Sả":
-        "IMG_7bd03c4e-527a-48b3-8a47-703262a6a50b.jpg",
-
-    "Trà Atiso Hạt Chia":
-        "retouch_2026101918013212.jpg",
-
-    "Lục Trà Lựu Nha Đam":
-        "Screenshot_20261019_180339_Google.jpg",
-
-    "Trà Dâu Tằm":
-        "IMG_90800819-5085-4b40-b37b-4c4a278068d7.jpg",
 }
 
 BEST_SELLERS = [
@@ -86,13 +48,13 @@ BEST_SELLERS = [
     "Lục Trà Lựu Nha Đam",
 ]
 
-SIZE_OPTIONS = {
-    "S (Vừa)": 0,
-    "M (Lớn)": 5000,
-    "L (Đặc biệt)": 10000,
+SIZE_PRICES = {
+    "S - Vừa": 0,
+    "M - Lớn": 5000,
+    "L - Đặc biệt": 10000,
 }
 
-TOPPING_OPTIONS = {
+TOPPINGS = {
     "Trân châu đen": 5000,
     "Trân châu trắng": 5000,
     "Thạch trái cây": 5000,
@@ -101,537 +63,496 @@ TOPPING_OPTIONS = {
 }
 
 SUGAR_LEVELS = [
-    "100% (Bình thường)", "70%", "50%", "30%", "0% (Không đường)"
+    "100% (Bình thường)",
+    "70%",
+    "50%",
+    "30%",
+    "0% (Không đường)",
 ]
 
 ICE_LEVELS = [
-    "100% (Bình thường)", "70%", "50%", "30%", "0% (Không đá)"
+    "100% (Bình thường)",
+    "70%",
+    "50%",
+    "30%",
+    "0% (Không đá)",
 ]
 
 # =========================================================
-# 3. KHỞI TẠO SESSION STATE
+# VOUCHER
+# BOBA3: giảm 3%
+# BOBA5: giảm 5% khi mua từ 2 ly
+# BOGO: mua 1 tặng 1 cùng món
 # =========================================================
-defaults = {
-    "cart": [],
-    "invoice_paid": False,
-    "selected_tea": "Trà Sữa Truyền Thống",
-    "wheel_prize": None,
-    "wheel_spun": False,
-    "applied_voucher": "",
-    "voucher_input": "",
-    "paid_invoice": None,
+VOUCHERS = {
+    "BOBA3": {
+        "name": "Giảm 3%",
+        "type": "percent",
+        "value": 3,
+        "min_quantity": 1,
+    },
+    "BOBA5": {
+        "name": "Giảm 5% bill từ 2 ly",
+        "type": "percent",
+        "value": 5,
+        "min_quantity": 2,
+    },
+    "BOGO": {
+        "name": "Mua 1 tặng 1",
+        "type": "bogo",
+        "value": 0,
+        "min_quantity": 2,
+    },
 }
 
-for key, value in defaults.items():
-    if key not in st.session_state:
-        st.session_state[key] = value
-
-# =========================================================
-# 4. HÀM HỖ TRỢ
-# =========================================================
-def money(value):
-    return f"{int(value):,} VNĐ"
-
-
-def image_or_placeholder(name, width=None):
-    path = Path(MENU_IMAGES[name])
-
-    if path.is_file():
-        st.image(
-            str(path),
-            caption=name,
-            use_container_width=(width is None),
-            width=width
-        )
-    else:
-        st.warning(
-            f"Chưa tìm thấy ảnh: {path.name}. "
-            "Hãy kiểm tra vị trí và tên file trên GitHub."
-        )
-
-
-def create_txt_invoice(
-    customer_name, cart, total_amount,
-    manual_discount, voucher_name,
-    voucher_discount, final_amount, timestamp
-):
-    content = "=" * 45 + "\n"
-    content += "HÓA ĐƠN BÁN HÀNG - QUÁN TRÀ SỮA ZZZ\n"
-    content += "=" * 45 + "\n"
-    content += f"Thời gian: {timestamp}\n"
-    content += (
-        f"Khách hàng: {customer_name.strip() or 'Khách vãng lai'}\n"
-    )
-    content += "-" * 45 + "\n"
-
-    for i, item in enumerate(cart, 1):
-        content += f"{i}. {item['Tên món']} - Size {item['Size']}\n"
-        content += f"   Đường: {item['Đường']} | Đá: {item['Đá']}\n"
-        content += f"   Topping: {item['Topping']}\n"
-        content += (
-            f"   {item['Số lượng']} x {money(item['Đơn giá'])}"
-            f" = {money(item['Thành tiền'])}\n"
-        )
-
-    content += "-" * 45 + "\n"
-    content += f"Tổng tiền món: {money(total_amount)}\n"
-    content += f"Giảm giá thủ công: {manual_discount}%\n"
-    content += f"Voucher: {voucher_name}\n"
-    content += f"Tiền giảm từ voucher: {money(voucher_discount)}\n"
-    content += f"TỔNG THANH TOÁN: {money(final_amount)}\n"
-    content += "=" * 45 + "\n"
-    content += "Cảm ơn quý khách và hẹn gặp lại!\n"
-    return content
-
-
-# =========================================================
-# 5. TIÊU ĐỀ VÀ ẢNH BÌA
-# =========================================================
-st.title("🧋 QUÁN TRÀ SỮA ZZZ")
-st.markdown("### Thưởng thức hương vị yêu thích của bạn!")
-st.markdown("---")
-
-cover = Path("Screenshot_20261017_170859_Hypic.jpg")
-if cover.is_file():
-    st.image(str(cover), use_container_width=True)
-
-# =========================================================
-# 6. BEST SELLER
-# =========================================================
-st.markdown("## ⭐ BEST SELLER - MÓN NỔI BẬT")
-
-best_cols = st.columns(3)
-
-for i, tea in enumerate(BEST_SELLERS):
-    with best_cols[i]:
-        image_or_placeholder(tea)
-        st.markdown(f"**🔥 {tea}**")
-        st.write(f"Giá từ **{money(MENU_TEA[tea])}**")
-
-        if st.button(
-            "Chọn món này",
-            key=f"best_seller_{i}",
-            use_container_width=True
-        ):
-            st.session_state.selected_tea = tea
-            st.rerun()
-
-st.markdown("---")
-
-# =========================================================
-# 7. VÒNG QUAY MAY MẮN
-# =========================================================
-st.markdown("## 🎡 VÒNG QUAY MAY MẮN")
-st.write("Quay để thử vận may và nhận ưu đãi nhé!")
-
-PRIZES = [
-    {"name": "Giảm 3%", "code": "QUAY3"},
-    {"name": "Chúc bạn may mắn", "code": ""},
-    {"name": "Giảm 5% cho bill từ 2 ly", "code": "QUAY5"},
-    {"name": "Chúc bạn may mắn", "code": ""},
-    {"name": "Mua 1 tặng 1", "code": "MUA1TANG1"},
-    {"name": "Chúc bạn may mắn", "code": ""},
+LUCKY_PRIZES = [
+    "Giảm 3%",
+    "may mắn",
+    "Giảm 5% bill từ 2 ly",
+    "may mắn",
+    "Mua 1 tặng 1",
+    "may mắn",
 ]
 
-st.markdown("""
-<div style="text-align:center; padding:10px;">
-  <div style="
-    width:250px;height:250px;max-width:75vw;
-    border-radius:50%;margin:auto;
-    border:8px solid #f5d49b;
-    background:conic-gradient(
-      #ff7675 0deg 60deg,
-      #ffeaa7 60deg 120deg,
-      #74b9ff 120deg 180deg,
-      #a29bfe 180deg 240deg,
-      #55efc4 240deg 300deg,
-      #fab1a0 300deg 360deg
-    );
-    display:flex;align-items:center;justify-content:center;
-    box-shadow:0 3px 12px #d8bca5;
-    font-size:22px;font-weight:bold;color:#633;
-  ">🎁 ZZZ 🎁<br>LUCKY WHEEL</div>
-  <p style="color:#8a6b5c;">6 phần thưởng đang chờ bạn!</p>
-</div>
-""", unsafe_allow_html=True)
+# =========================================================
+# SESSION STATE
+# =========================================================
+if "cart" not in st.session_state:
+    st.session_state.cart = []
 
-if not st.session_state.wheel_spun:
-    if st.button(
-        "🎡 QUAY NGAY",
-        type="primary",
-        use_container_width=True
-    ):
-        prize = random.choice(PRIZES)
-        st.session_state.wheel_prize = prize
-        st.session_state.wheel_spun = True
+if "invoice" not in st.session_state:
+    st.session_state.invoice = None
 
-        if prize["code"]:
-            st.session_state.voucher_input = prize["code"]
+if "lucky_prize" not in st.session_state:
+    st.session_state.lucky_prize = ""
 
-        st.rerun()
-else:
-    prize = st.session_state.wheel_prize
+if "voucher_code" not in st.session_state:
+    st.session_state.voucher_code = ""
 
-    if prize and prize["code"]:
-        st.success(f"🎉 Bạn nhận được: {prize['name']}!")
-        st.write(f"Mã voucher của bạn: **{prize['code']}**")
-        st.caption(
-            "Mã đã được điền vào ô voucher. "
-            "Bạn cần áp dụng mã khi thanh toán."
-        )
-    else:
-        st.info("😊 Chúc bạn may mắn lần sau!")
-
-    if st.button("🔄 Chơi lại vòng quay"):
-        st.session_state.wheel_spun = False
-        st.session_state.wheel_prize = None
-        st.rerun()
-
-st.markdown("---")
+if "customer_name" not in st.session_state:
+    st.session_state.customer_name = ""
 
 # =========================================================
-# 8. MENU ĐẶT MÓN VÀ GIỎ HÀNG
+# HÀM HỖ TRỢ
 # =========================================================
-col_left, col_right = st.columns([1.05, 0.95])
+def format_money(amount):
+    return f"{int(round(amount)):,} đ".replace(",", ".")
 
-with col_left:
-    st.subheader("📝 Thông tin đơn hàng")
 
-    customer_name = st.text_input(
-        "Tên khách hàng:",
-        placeholder="Nhập tên khách hàng..."
-    )
+def get_image_path(product_name):
+    relative_path = IMAGE_URLS.get(product_name, "")
+    path = Path(__file__).parent / relative_path
+    if relative_path and path.is_file():
+        return str(path)
+    return None
 
-    st.markdown("#### Chọn món nước")
 
-    selected_tea = st.selectbox(
-        "Loại trà sữa:",
-        list(MENU_TEA.keys()),
-        key="selected_tea"
-    )
+def cart_quantity(cart):
+    return sum(item["quantity"] for item in cart)
 
-    image_or_placeholder(selected_tea, width=300)
 
-    st.write(f"**Giá gốc:** {money(MENU_TEA[selected_tea])}")
+def calculate_subtotal(cart):
+    return sum(item["unit_price"] * item["quantity"] for item in cart)
 
-    col_item, col_qty = st.columns([2, 1])
 
-    with col_item:
-        selected_size = st.selectbox(
-            "Size:", list(SIZE_OPTIONS.keys())
-        )
+def calculate_bogo_discount(cart):
+    """Tặng một ly cùng món cho mỗi cặp ly đủ điều kiện.
+    Giá ly tặng là giá cơ bản của món, không tính size/topping.
+    """
+    discount = 0
+    for item in cart:
+        free_cups = item["quantity"] // 2
+        discount += free_cups * MENU[item["name"]]
+    return discount
 
-    with col_qty:
-        quantity = st.number_input(
-            "Số lượng:", min_value=1, max_value=100,
-            value=1, step=1
-        )
 
-    c_size, c_sugar, c_ice = st.columns(3)
+def calculate_totals(cart, discount_percent=0, voucher_code=""):
+    subtotal = calculate_subtotal(cart)
+    total_quantity = cart_quantity(cart)
+    bogo_discount = 0
+    percent_discount = 0
+    voucher_message = "Không áp dụng voucher"
 
-    with c_sugar:
-        selected_sugar = st.selectbox(
-            "Mức đường:", SUGAR_LEVELS
-        )
+    code = voucher_code.strip().upper()
+    voucher = VOUCHERS.get(code)
 
-    with c_ice:
-        selected_ice = st.selectbox(
-            "Mức đá:", ICE_LEVELS
-        )
+    if voucher:
+        if total_quantity < voucher["min_quantity"]:
+            voucher_message = (
+                f"Voucher {code} yêu cầu tối thiểu "
+                f"{voucher['min_quantity']} ly."
+            )
+        elif voucher["type"] == "bogo":
+            bogo_discount = calculate_bogo_discount(cart)
+            voucher_message = "Đã áp dụng voucher Mua 1 tặng 1."
+        elif voucher["type"] == "percent":
+            percent_discount += voucher["value"]
+            voucher_message = (
+                f"Đã áp dụng voucher {voucher['name']}."
+            )
+    elif code:
+        voucher_message = "Mã voucher không hợp lệ."
 
-    selected_toppings = st.multiselect(
-        "Topping (có thể chọn nhiều):",
-        list(TOPPING_OPTIONS.keys())
-    )
+    # Phần trăm giảm giá nhập thủ công
+    manual_discount = max(0, min(float(discount_percent), 100))
+    percent_discount += manual_discount
+    percent_discount = min(percent_discount, 100)
 
-    base_price = MENU_TEA[selected_tea]
-    size_price = SIZE_OPTIONS[selected_size]
-    topping_price = sum(
-        TOPPING_OPTIONS[t] for t in selected_toppings
-    )
+    amount_after_bogo = max(0, subtotal - bogo_discount)
+    percent_amount = amount_after_bogo * percent_discount / 100
+    final_total = max(0, amount_after_bogo - percent_amount)
 
-    unit_price = base_price + size_price + topping_price
-    item_total = unit_price * quantity
+    return {
+        "subtotal": subtotal,
+        "bogo_discount": bogo_discount,
+        "percent_discount": percent_discount,
+        "percent_amount": percent_amount,
+        "final_total": final_total,
+        "voucher_message": voucher_message,
+    }
 
-    st.info(
-        f"Đơn giá mỗi ly: **{money(unit_price)}**\n\n"
-        f"Thành tiền: **{money(item_total)}**"
-    )
 
-    if st.button(
-        "➕ Thêm vào hóa đơn",
-        type="primary",
-        use_container_width=True
-    ):
-        topping_str = (
-            ", ".join(selected_toppings)
-            if selected_toppings else "Không"
-        )
+def reset_order():
+    st.session_state.cart = []
+    st.session_state.invoice = None
+    st.session_state.lucky_prize = ""
+    st.session_state.voucher_code = ""
+    st.session_state.customer_name = ""
+    st.session_state.discount_input = 0
 
-        st.session_state.cart.append({
-            "Tên món": selected_tea,
-            "Size": selected_size.split()[0],
-            "Đường": selected_sugar.split()[0],
-            "Đá": selected_ice.split()[0],
-            "Topping": topping_str,
-            "Đơn giá": unit_price,
-            "Số lượng": int(quantity),
-            "Thành tiền": item_total,
-        })
 
-        st.session_state.invoice_paid = False
-        st.session_state.paid_invoice = None
-        st.session_state.applied_voucher = ""
-        st.toast(f"Đã thêm {quantity} ly vào giỏ hàng!", icon="✅")
+# =========================================================
+# GIAO DIỆN
+# =========================================================
+st.title("🧋 BOBA TEA")
+st.subheader("Hệ thống gọi món và tính tiền trà sữa")
+st.caption("Chọn món yêu thích, tùy chỉnh theo khẩu vị và thanh toán.")
 
-with col_right:
-    st.subheader("🛒 Giỏ hàng")
+menu_tab, order_tab, payment_tab = st.tabs(
+    ["📋 Menu", "🛒 Giỏ hàng", "💳 Thanh toán"]
+)
+
+# =========================================================
+# TAB 1: MENU
+# =========================================================
+with menu_tab:
+    st.header("📋 Menu trà sữa")
+
+    st.write("Giá size S là giá cơ bản. Size M thêm 5.000 đ, size L thêm 10.000 đ.")
+
+    columns = st.columns(3)
+
+    for index, (name, price) in enumerate(MENU.items()):
+        with columns[index % 3]:
+            with st.container(border=True):
+                image_path = get_image_path(name)
+
+                if image_path:
+                    st.image(image_path, use_container_width=True)
+                else:
+                    st.info("Chưa tìm thấy ảnh. Kiểm tra thư mục images trên GitHub.")
+
+                if name in BEST_SELLERS:
+                    st.markdown(f"**{name}**  \n<small>best seller ❤️‍🔥</small>", unsafe_allow_html=True)
+                else:
+                    st.markdown(f"**{name}**")
+
+                st.write(f"Giá từ **{format_money(price)}**")
+
+                with st.form(f"form_{index}"):
+                    size = st.selectbox(
+                        "Chọn size",
+                        list(SIZE_PRICES.keys()),
+                        key=f"size_{index}",
+                    )
+
+                    topping_choices = st.multiselect(
+                        "Chọn topping",
+                        list(TOPPINGS.keys()),
+                        key=f"toppings_{index}",
+                    )
+
+                    sugar = st.selectbox(
+                        "Đường",
+                        SUGAR_LEVELS,
+                        index=0,
+                        key=f"sugar_{index}",
+                    )
+
+                    ice = st.selectbox(
+                        "Đá",
+                        ICE_LEVELS,
+                        index=0,
+                        key=f"ice_{index}",
+                    )
+
+                    quantity = st.number_input(
+                        "Số lượng",
+                        min_value=1,
+                        max_value=50,
+                        value=1,
+                        step=1,
+                        key=f"quantity_{index}",
+                    )
+
+                    unit_price = (
+                        price
+                        + SIZE_PRICES[size]
+                        + sum(TOPPINGS[t] for t in topping_choices)
+                    )
+
+                    st.caption(
+                        f"Đơn giá: {format_money(unit_price)}"
+                    )
+
+                    add_button = st.form_submit_button(
+                        "➕ Thêm vào giỏ hàng",
+                        use_container_width=True,
+                    )
+
+                    if add_button:
+                        st.session_state.cart.append({
+                            "name": name,
+                            "base_price": price,
+                            "size": size,
+                            "toppings": topping_choices.copy(),
+                            "sugar": sugar,
+                            "ice": ice,
+                            "quantity": int(quantity),
+                            "unit_price": unit_price,
+                        })
+                        st.session_state.invoice = None
+                        st.success(f"Đã thêm {name} vào giỏ hàng!")
+
+# =========================================================
+# TAB 2: GIỎ HÀNG
+# =========================================================
+with order_tab:
+    st.header("🛒 Giỏ hàng")
 
     if not st.session_state.cart:
-        st.warning("Giỏ hàng đang trống. Hãy chọn món ở bên trái.")
+        st.info("Giỏ hàng đang trống. Hãy chọn món ở tab Menu.")
     else:
-        df_cart = pd.DataFrame(st.session_state.cart)
+        for index, item in enumerate(st.session_state.cart):
+            with st.container(border=True):
+                col1, col2 = st.columns([4, 1])
 
-        st.dataframe(
-            df_cart[
-                ["Tên món", "Size", "Topping",
-                 "Số lượng", "Đơn giá", "Thành tiền"]
-            ],
-            use_container_width=True,
-            hide_index=True
+                with col1:
+                    st.markdown(f"**{item['name']}**")
+                    st.write(f"Size: {item['size']}")
+                    st.write(
+                        "Topping: "
+                        + (", ".join(item["toppings"]) if item["toppings"] else "Không")
+                    )
+                    st.write(f"Đường: {item['sugar']} | Đá: {item['ice']}")
+                    st.write(f"Số lượng: {item['quantity']}")
+                    st.write(
+                        f"Thành tiền: **{format_money(item['unit_price'] * item['quantity'])}**"
+                    )
+
+                with col2:
+                    if st.button("🗑️ Xóa", key=f"remove_{index}"):
+                        st.session_state.cart.pop(index)
+                        st.session_state.invoice = None
+                        st.rerun()
+
+        subtotal = calculate_subtotal(st.session_state.cart)
+        st.divider()
+        st.metric("Tạm tính", format_money(subtotal))
+
+        col_a, col_b = st.columns(2)
+
+        with col_a:
+            if st.button("🧹 Xóa toàn bộ giỏ hàng", use_container_width=True):
+                st.session_state.cart = []
+                st.session_state.invoice = None
+                st.rerun()
+
+        with col_b:
+            if st.button("➡️ Đi đến thanh toán", use_container_width=True):
+                st.info("Mở tab Thanh toán để hoàn tất đơn hàng.")
+
+# =========================================================
+# TAB 3: THANH TOÁN
+# =========================================================
+with payment_tab:
+    st.header("💳 Thanh toán")
+
+    if not st.session_state.cart:
+        st.info("Bạn chưa có món nào trong giỏ hàng.")
+    else:
+        customer_name = st.text_input(
+            "Tên khách hàng",
+            key="customer_name",
+            placeholder="Nhập tên khách hàng",
         )
 
-        if st.button("🗑️ Xóa tất cả món", use_container_width=True):
-            st.session_state.cart = []
-            st.session_state.invoice_paid = False
-            st.session_state.paid_invoice = None
-            st.session_state.applied_voucher = ""
+        st.subheader("🎡 Vòng quay may mắn")
+        st.write("Hãy thử vận may để nhận một ưu đãi.")
+
+        if st.button("🎲 Quay thưởng", use_container_width=True):
+            prize = random.choice(LUCKY_PRIZES)
+            st.session_state.lucky_prize = prize
+
+            if prize == "Giảm 3%":
+                st.session_state.voucher_code = "BOBA3"
+            elif prize == "Giảm 5% bill từ 2 ly":
+                st.session_state.voucher_code = "BOBA5"
+            elif prize == "Mua 1 tặng 1":
+                st.session_state.voucher_code = "BOGO"
+            else:
+                st.session_state.voucher_code = ""
+
             st.rerun()
 
-        st.markdown("---")
+        if st.session_state.lucky_prize:
+            if st.session_state.lucky_prize == "may mắn":
+                st.info("🍀 Chúc bạn may mắn lần sau!")
+            else:
+                st.success(f"🎉 Bạn nhận được: {st.session_state.lucky_prize}")
 
-        total_price = int(df_cart["Thành tiền"].sum())
-        total_cups = sum(
-            item["Số lượng"] for item in st.session_state.cart
+        st.caption(
+            "Mã voucher mẫu: BOBA3 (giảm 3%), BOBA5 (giảm 5% từ 2 ly), "
+            "BOGO (mua 1 tặng 1)."
         )
 
-        st.markdown("### 🎟️ Ưu đãi và thanh toán")
+        voucher_code = st.text_input(
+            "Mã voucher",
+            key="voucher_code",
+            placeholder="Ví dụ: BOBA3",
+        )
 
-        manual_discount = st.number_input(
-            "Giảm giá thủ công (%):",
+        discount_input = st.number_input(
+            "Giảm giá thêm (%)",
             min_value=0,
             max_value=100,
             value=0,
-            step=5,
-            key="manual_discount"
+            step=1,
+            key="discount_input",
         )
 
-        # Voucher được khai báo và kiểm tra tại đây
-        VOUCHERS = {
-            "QUAY3": {
-                "type": "percent",
-                "value": 3,
-                "description": "Giảm 3%"
-            },
-            "BOBA3": {
-                "type": "percent",
-                "value": 3,
-                "description": "Giảm 3%"
-            },
-            "QUAY5": {
-                "type": "percent",
-                "value": 5,
-                "min_cups": 2,
-                "description": "Giảm 5% cho đơn từ 2 ly"
-            },
-            "BOBA5": {
-                "type": "percent",
-                "value": 5,
-                "min_cups": 2,
-                "description": "Giảm 5% cho đơn từ 2 ly"
-            },
-            "MUA1TANG1": {
-                "type": "bogo",
-                "description": "Mua 1 tặng 1"
-            },
-        }
-
-        voucher_code = st.text_input(
-            "Nhập mã voucher:",
-            key="voucher_input",
-            placeholder="QUAY3 / QUAY5 / MUA1TANG1"
-        ).strip().upper()
-
-        if st.button("🎟️ Áp dụng voucher", use_container_width=True):
-            voucher = VOUCHERS.get(voucher_code)
-
-            if not voucher:
-                st.session_state.applied_voucher = ""
-                st.error("Mã voucher không hợp lệ.")
-            elif total_cups < voucher.get("min_cups", 0):
-                st.session_state.applied_voucher = ""
-                st.error("Voucher này yêu cầu mua ít nhất 2 ly.")
-            elif voucher["type"] == "bogo" and total_cups < 2:
-                st.session_state.applied_voucher = ""
-                st.error("Mua 1 tặng 1 cần có ít nhất 2 ly.")
-            else:
-                st.session_state.applied_voucher = voucher_code
-                st.session_state.invoice_paid = False
-                st.session_state.paid_invoice = None
-                st.success("Áp dụng voucher thành công!")
-
-        # Tính tiền
-        manual_discount_amount = int(
-            total_price * manual_discount / 100
+        totals = calculate_totals(
+            st.session_state.cart,
+            discount_percent=discount_input,
+            voucher_code=voucher_code,
         )
 
-        subtotal = max(0, total_price - manual_discount_amount)
+        st.divider()
+        st.subheader("🧾 Chi tiết hóa đơn")
 
-        active_code = st.session_state.applied_voucher
-        voucher_discount = 0
-        voucher_label = "Không áp dụng"
-
-        if active_code in VOUCHERS:
-            voucher = VOUCHERS[active_code]
-
-            if total_cups < voucher.get("min_cups", 0):
-                voucher_label = "Không đủ điều kiện voucher"
-                st.session_state.applied_voucher = ""
-                active_code = ""
-            elif voucher["type"] == "percent":
-                voucher_discount = int(
-                    subtotal * voucher["value"] / 100
-                )
-                voucher_label = (
-                    f"{voucher['description']} ({active_code})"
-                )
-            elif voucher["type"] == "bogo":
-                # Mô phỏng tặng một ly có đơn giá thấp nhất.
-                cheapest_price = min(
-                    item["Đơn giá"]
-                    for item in st.session_state.cart
-                )
-                voucher_discount = min(subtotal, cheapest_price)
-                voucher_label = f"Mua 1 tặng 1 ({active_code})"
-
-        final_price = max(0, subtotal - voucher_discount)
-
-        st.write(f"Tổng tiền món: **{money(total_price)}**")
+        st.write(f"**Tạm tính:** {format_money(totals['subtotal'])}")
         st.write(
-            f"Giảm giá thủ công: **{money(manual_discount_amount)}**"
+            f"**Giảm giá Mua 1 tặng 1:** "
+            f"{format_money(totals['bogo_discount'])}"
         )
-        st.write(f"Voucher: **{voucher_label}**")
-        st.write(f"Giảm từ voucher: **{money(voucher_discount)}**")
+        st.write(
+            f"**Tổng tỷ lệ giảm giá:** "
+            f"{totals['percent_discount']:g}%"
+        )
+        st.write(
+            f"**Tiền giảm theo phần trăm:** "
+            f"{format_money(totals['percent_amount'])}"
+        )
+        st.caption(totals["voucher_message"])
 
-        st.markdown(f"## Tổng thanh toán: {money(final_price)}")
+        st.markdown(
+            f"### Tổng thanh toán: {format_money(totals['final_total'])}"
+        )
 
         if st.button(
-            "💳 XÁC NHẬN THANH TOÁN",
+            "✅ Xác nhận thanh toán",
             type="primary",
-            use_container_width=True
+            use_container_width=True,
         ):
-            timestamp = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-
-            st.session_state.paid_invoice = {
-                "customer_name": customer_name,
-                "cart": [item.copy() for item in st.session_state.cart],
-                "total_price": total_price,
-                "manual_discount": manual_discount,
-                "manual_discount_amount": manual_discount_amount,
-                "voucher_label": voucher_label,
-                "voucher_discount": voucher_discount,
-                "final_price": final_price,
-                "timestamp": timestamp,
-            }
-
-            st.session_state.invoice_paid = True
-            st.balloons()
-            st.rerun()
+            if not customer_name.strip():
+                st.warning("Vui lòng nhập tên khách hàng.")
+            else:
+                st.session_state.invoice = {
+                    "customer": customer_name.strip(),
+                    "created_at": datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
+                    "items": [item.copy() for item in st.session_state.cart],
+                    "subtotal": totals["subtotal"],
+                    "bogo_discount": totals["bogo_discount"],
+                    "percent_discount": totals["percent_discount"],
+                    "percent_amount": totals["percent_amount"],
+                    "final_total": totals["final_total"],
+                    "voucher_code": voucher_code.strip().upper(),
+                    "voucher_message": totals["voucher_message"],
+                }
+                st.balloons()
+                st.success("Thanh toán thành công!")
 
 # =========================================================
-# 9. HÓA ĐƠN VÀ TẢI FILE TXT
+# HÓA ĐƠN SAU THANH TOÁN
 # =========================================================
-if st.session_state.invoice_paid and st.session_state.paid_invoice:
-    invoice = st.session_state.paid_invoice
+if st.session_state.invoice:
+    invoice = st.session_state.invoice
 
-    st.markdown("---")
-    st.success("🎉 Xác nhận thanh toán thành công!")
+    st.divider()
+    st.header("🧾 HÓA ĐƠN BOBA TEA")
+
+    st.write(f"**Khách hàng:** {invoice['customer']}")
+    st.write(f"**Thời gian:** {invoice['created_at']}")
+
+    for index, item in enumerate(invoice["items"], start=1):
+        toppings = ", ".join(item["toppings"]) if item["toppings"] else "Không"
+        st.write(
+            f"{index}. {item['name']} | {item['size']} | "
+            f"Số lượng: {item['quantity']} | "
+            f"Topping: {toppings} | "
+            f"{format_money(item['unit_price'] * item['quantity'])}"
+        )
+
+    st.divider()
+    st.write(f"Tạm tính: {format_money(invoice['subtotal'])}")
+    st.write(f"Giảm Mua 1 tặng 1: {format_money(invoice['bogo_discount'])}")
+    st.write(f"Tỷ lệ giảm giá: {invoice['percent_discount']:g}%")
+    st.write(f"Tiền giảm theo phần trăm: {format_money(invoice['percent_amount'])}")
+    st.write(f"Mã voucher: {invoice['voucher_code'] or 'Không sử dụng'}")
+    st.caption(invoice["voucher_message"])
 
     st.markdown(
-        "<h2 style='text-align:center;color:#b45335'>"
-        "🧋 HÓA ĐƠN BÁN HÀNG - ZZZ</h2>",
-        unsafe_allow_html=True
+        f"## Tổng thanh toán: {format_money(invoice['final_total'])}"
     )
+    st.success("Cảm ơn bạn đã ủng hộ BOBA TEA! 🧋")
 
-    st.write(f"**Thời gian:** {invoice['timestamp']}")
-    st.write(
-        "**Khách hàng:** "
-        f"{invoice['customer_name'].strip() or 'Khách vãng lai'}"
-    )
+    invoice_text = [
+        "========== HÓA ĐƠN BOBA TEA ==========",
+        f"Khách hàng: {invoice['customer']}",
+        f"Thời gian: {invoice['created_at']}",
+        "",
+    ]
 
-    invoice_df = pd.DataFrame(invoice["cart"])
+    for index, item in enumerate(invoice["items"], start=1):
+        invoice_text.append(
+            f"{index}. {item['name']} | {item['size']} | "
+            f"Số lượng: {item['quantity']} | "
+            f"Đơn giá: {format_money(item['unit_price'])} | "
+            f"Thành tiền: {format_money(item['unit_price'] * item['quantity'])}"
+        )
+        invoice_text.append(f"   Topping: {', '.join(item['toppings']) or 'Không'}")
+        invoice_text.append(f"   Đường: {item['sugar']} | Đá: {item['ice']}")
 
-    st.dataframe(
-        invoice_df[
-            ["Tên món", "Size", "Đường", "Đá",
-             "Topping", "Số lượng", "Đơn giá", "Thành tiền"]
-        ],
-        use_container_width=True,
-        hide_index=True
-    )
-
-    st.write(f"**Tổng tiền món:** {money(invoice['total_price'])}")
-    st.write(
-        f"**Giảm giá thủ công:** "
-        f"{invoice['manual_discount']}% "
-        f"(-{money(invoice['manual_discount_amount'])})"
-    )
-    st.write(f"**Voucher:** {invoice['voucher_label']}")
-    st.write(
-        f"**Tiền giảm voucher:** {money(invoice['voucher_discount'])}"
-    )
-    st.markdown(
-        f"## Tổng thanh toán: {money(invoice['final_price'])}"
-    )
-
-    txt_data = create_txt_invoice(
-        invoice["customer_name"],
-        invoice["cart"],
-        invoice["total_price"],
-        invoice["manual_discount"],
-        invoice["voucher_label"],
-        invoice["voucher_discount"],
-        invoice["final_price"],
-        invoice["timestamp"],
-    )
+    invoice_text.extend([
+        "",
+        f"Tạm tính: {format_money(invoice['subtotal'])}",
+        f"Giảm Mua 1 tặng 1: {format_money(invoice['bogo_discount'])}",
+        f"Tỷ lệ giảm giá: {invoice['percent_discount']:g}%",
+        f"Tiền giảm theo phần trăm: {format_money(invoice['percent_amount'])}",
+        f"Mã voucher: {invoice['voucher_code'] or 'Không sử dụng'}",
+        f"Tổng thanh toán: {format_money(invoice['final_total'])}",
+        "",
+        "Cảm ơn quý khách!",
+    ])
 
     st.download_button(
-        "📥 Tải hóa đơn (.TXT)",
-        data=txt_data,
-        file_name=(
-            f"HoaDon_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
-        ),
+        label="📥 Tải hóa đơn TXT",
+        data="\n".join(invoice_text),
+        file_name="hoa_don_boba_tea.txt",
         mime="text/plain",
-        use_container_width=True
+        use_container_width=True,
     )
 
-    if st.button("🔄 Tạo đơn hàng mới", use_container_width=True):
-        st.session_state.cart = []
-        st.session_state.invoice_paid = False
-        st.session_state.paid_invoice = None
-        st.session_state.applied_voucher = ""
-        st.session_state.voucher_input = ""
-        st.session_state.wheel_prize = None
-        st.session_state.wheel_spun = False
+    if st.button("🆕 Tạo đơn hàng mới", use_container_width=True):
+        reset_order()
         st.rerun()
-
-# =========================================================
-# 10. CHÂN TRANG
-# =========================================================
-st.markdown("---")
-st.markdown(
-    "<div style='text-align:center;color:#8a6b5c'>"
-    "🧋 QUÁN TRÀ SỮA ZZZ | Cảm ơn bạn đã ghé thăm!"
-    "</div>",
-    unsafe_allow_html=True
-)
