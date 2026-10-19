@@ -1,8 +1,8 @@
-
 import streamlit as st
 import random
 from datetime import datetime
 from pathlib import Path
+st.image("Screenshot_20261017_170859_Hypic.jpg")
 
 # =========================================================
 # CẤU HÌNH TRANG
