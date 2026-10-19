@@ -10,6 +10,7 @@ from urllib.parse import urlencode
 
 import pandas as pd
 import streamlit as st
+import streamlit.components.v1 as components
 st.image("Screenshot_20261017_170859_Hypic.jpg")
 
 # =========================================================
@@ -158,6 +159,8 @@ DEFAULTS = {
     "cart": [],
     "selected_drink": list(MENU.keys())[0],
     "lucky_prize": "",
+    "lucky_index": None,
+    "wheel_just_spun": False,
     "voucher_code": "",
     "discount_input": 0,
     "last_order_code": "",
@@ -314,6 +317,29 @@ def status_label(status):
 
 def money_column(series):
     return series.fillna(0).astype(int)
+
+
+def render_lucky_wheel(selected_index=None, animate=False):
+    """Hiển thị vòng quay 6 ô; kết quả được chọn phía Python để đồng bộ voucher."""
+    labels = [
+        "Giảm 3%",
+        "Chúc may mắn",
+        "Giảm 5%\nbill từ 2 ly",
+        "Chúc may mắn",
+        "Mua 1\ntặng 1",
+        "Chúc may mắn",
+    ]
+    label_html = "".join(
+        f'<div class="wheel-label" style="transform: rotate({i * 60 + 30}deg) translateY(-88px) rotate(-{i * 60 + 30}deg);">{label.replace(chr(10), "<br>")}</div>'
+        for i, label in enumerate(labels)
+    )
+    rotation = 0
+    if selected_index is not None:
+        rotation = 1800 + ((330 - selected_index * 60) % 360)
+    initial_rotation = 0 if animate and selected_index is not None else rotation
+    target_rotation = rotation
+    html = f''' <div class="wheel-wrap"> <div class="pointer"></div> <div id="prize-wheel" class="wheel" style="transform: rotate({initial_rotation}deg);"> {label_html} <div class="wheel-center">ZZZ</div> </div> </div> <style> * {{ box-sizing: border-box; }} body {{ margin: 0; font-family: Arial, sans-serif; background: transparent; }} .wheel-wrap {{ width: 330px; height: 330px; margin: 8px auto 0; position: relative; padding-top: 14px; }} .wheel {{ width: 300px; height: 300px; margin: 14px auto 0; border-radius: 50%; position: relative; border: 6px solid #fff; outline: 3px solid #8f416b; background: conic-gradient(from 0deg, #ff8eb3 0deg 60deg, #ffe5a3 60deg 120deg, #b7e7d1 120deg 180deg, #ffd0df 180deg 240deg, #d9c5ff 240deg 300deg, #fff0bd 300deg 360deg); box-shadow: 0 5px 18px rgba(80,30,60,.22); transition: transform 4.8s cubic-bezier(.12,.72,.12,1); }} .wheel-label {{ position: absolute; top: 50%; left: 50%; margin-left: -48px; margin-top: -16px; width: 96px; text-align: center; font-weight: 800; font-size: 11px; line-height: 1.2; color: #4b2540; text-shadow: 0 1px 0 rgba(255,255,255,.45); }} .wheel-center {{ position: absolute; width: 62px; height: 62px; left: 50%; top: 50%; transform: translate(-50%,-50%); border-radius: 50%; display: flex; align-items: center; justify-content: center; background: #fff; border: 4px solid #8f416b; color: #8f416b; font-size: 17px; font-weight: 900; box-shadow: 0 2px 8px rgba(0,0,0,.18); }} .pointer {{ position: absolute; z-index: 5; top: 0; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 17px solid transparent; border-right: 17px solid transparent; border-top: 0; border-bottom: 31px solid #a51f55; filter: drop-shadow(0 2px 2px rgba(0,0,0,.25)); }} @media (max-width: 380px) {{ .wheel-wrap {{ transform: scale(.9); transform-origin: top center; margin-bottom: -28px; }} }} </style> <script> const wheel = document.getElementById('prize-wheel'); const shouldAnimate = {str(bool(animate)).lower()}; const target = {target_rotation}; if (shouldAnimate) {{ setTimeout(() => {{ wheel.style.transform = `rotate(${{target}}deg)`; }}, 120); }} </script> </div> '''
+    components.html(html, height=350, scrolling=False)
 
 
 def render_order_details(order, show_status=True):
@@ -473,22 +499,35 @@ with payment_tab:
         )
 
         st.subheader("🎡 Vòng quay may mắn")
-        st.write("Thử vận may để nhận ưu đãi.")
-        if st.button("🎲 Quay thưởng", use_container_width=True):
-            prize = secrets.choice(LUCKY_PRIZES)
+        st.write("Vòng quay gồm 3 ô ưu đãi xen kẽ 3 ô chúc may mắn. Nhấn nút bên dưới để thử vận may!")
+        wheel_animate = bool(st.session_state.get("wheel_just_spun", False))
+        render_lucky_wheel(st.session_state.get("lucky_index"), animate=wheel_animate)
+        # Chỉ phát hoạt ảnh ở lần rerun ngay sau khi khách bấm quay.
+        if wheel_animate:
+            st.session_state.wheel_just_spun = False
+
+        if st.button("🎲 QUAY THƯỞNG", use_container_width=True, type="primary"):
+            prize_index = secrets.randbelow(len(LUCKY_PRIZES))
+            prize = LUCKY_PRIZES[prize_index]
+            st.session_state.lucky_index = prize_index
             st.session_state.lucky_prize = prize
+            st.session_state.wheel_just_spun = True
             st.session_state.voucher_code = {
                 "Giảm 3%": "BOBA3",
                 "Giảm 5% bill từ 2 ly": "BOBA5",
                 "Mua 1 tặng 1": "BOGO",
             }.get(prize, "")
+            # Đồng bộ ô nhập voucher để kết quả vòng quay được áp dụng ngay.
+            st.session_state.checkout_voucher = st.session_state.voucher_code
             st.rerun()
 
         if st.session_state.lucky_prize:
             if st.session_state.lucky_prize == "may mắn":
-                st.info("🍀 Chúc bạn may mắn lần sau!")
+                st.info("🍀 Kết quả: Chúc may mắn lần sau! Bạn có thể tiếp tục đặt món.")
             else:
-                st.success(f"🎉 Bạn nhận được: {st.session_state.lucky_prize}")
+                st.success(f"🎉 Kết quả vòng quay: {st.session_state.lucky_prize}!")
+                if st.session_state.voucher_code:
+                    st.caption(f"Mã ưu đãi đã điền vào ô voucher: {st.session_state.voucher_code}")
 
         voucher_code = st.text_input(
             "Mã voucher", key="checkout_voucher", value=st.session_state.voucher_code,
@@ -799,4 +838,4 @@ st.divider()
 st.caption(
     "Tiệm trà ZZZ • QR Vietcombank là QR chuyển khoản. "
     "Doanh thu chỉ được ghi nhận sau khi Admin xác nhận thủ công."
-    )
+        )
