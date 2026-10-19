@@ -106,19 +106,19 @@ ICE_LEVELS = [
 ]
 
 VOUCHERS = {
-    "BOBA3": {
+    "ZZZ3": {
         "name": "Giảm 3%",
         "type": "percent",
         "value": 3,
         "min_quantity": 1,
     },
-    "BOBA5": {
+    "ZZZ5": {
         "name": "Giảm 5% bill từ 2 ly",
         "type": "percent",
         "value": 5,
         "min_quantity": 2,
     },
-    "BOGO": {
+    "ZZZ1": {
         "name": "Mua 1 tặng 1",
         "type": "bogo",
         "value": 0,
@@ -193,11 +193,18 @@ def calculate_subtotal(cart):
 
 
 def calculate_bogo_discount(cart):
-    # Mỗi cặp cùng món: tặng 1 ly, phần giảm bằng giá cơ bản của món.
-    discount = 0
+    """Giảm giá Mua 1 tặng 1 theo từng cặp ly, kể cả hai món khác nhau. Mỗi cặp: khách trả một nửa tổng giá của hai ly. Nếu số ly lẻ, ly không ghép cặp vẫn tính đủ giá. Giá mỗi ly dùng unit_price (đã gồm size và topping). """
+    unit_prices = []
     for item in cart:
-        free_cups = int(item["quantity"]) // 2
-        discount += free_cups * int(item["base_price"])
+        qty = max(0, int(item.get("quantity", 0)))
+        unit_prices.extend([int(item.get("unit_price", item.get("base_price", 0)))] * qty)
+
+    discount = 0
+    for i in range(0, len(unit_prices) - 1, 2):
+        pair_total = unit_prices[i] + unit_prices[i + 1]
+        # Làm tròn số tiền phải trả của cặp đến đồng gần nhất; discount là phần còn lại.
+        pair_payable = round(pair_total / 2)
+        discount += pair_total - pair_payable
     return discount
 
 
@@ -217,8 +224,14 @@ def calculate_totals(cart, discount_percent=0, voucher_code=""):
                 f"Voucher {code} yêu cầu tối thiểu {voucher['min_quantity']} ly."
             )
         elif voucher["type"] == "bogo":
-            bogo_discount = calculate_bogo_discount(cart)
-            voucher_message = "Đã áp dụng voucher Mua 1 tặng 1."
+            if total_quantity < 2:
+                voucher_message = "Mua 1 tặng 1 yêu cầu chọn ít nhất 2 ly nước. Hãy thêm một món nữa từ menu."
+            else:
+                bogo_discount = calculate_bogo_discount(cart)
+                voucher_message = (
+                    "Đã áp dụng Mua 1 tặng 1: mỗi cặp 2 ly chỉ tính bằng một nửa tổng giá của cặp. "
+                    "Nếu số ly lẻ, ly chưa ghép cặp tính đủ giá."
+                )
         elif voucher["type"] == "percent":
             percent_discount += float(voucher["value"])
             voucher_message = f"Đã áp dụng voucher {voucher['name']}."
@@ -513,9 +526,9 @@ with payment_tab:
             st.session_state.lucky_prize = prize
             st.session_state.wheel_just_spun = True
             st.session_state.voucher_code = {
-                "Giảm 3%": "BOBA3",
-                "Giảm 5% bill từ 2 ly": "BOBA5",
-                "Mua 1 tặng 1": "BOGO",
+                "Giảm 3%": "ZZZ3",
+                "Giảm 5% bill từ 2 ly": "ZZZ5",
+                "Mua 1 tặng 1": "ZZZ1",
             }.get(prize, "")
             # Đồng bộ ô nhập voucher để kết quả vòng quay được áp dụng ngay.
             st.session_state.checkout_voucher = st.session_state.voucher_code
@@ -531,7 +544,7 @@ with payment_tab:
 
         voucher_code = st.text_input(
             "Mã voucher", key="checkout_voucher", value=st.session_state.voucher_code,
-            placeholder="Ví dụ: BOBA3, BOBA5, BOGO"
+            placeholder="Ví dụ: ZZZ3, ZZZ5, ZZZ1"
         )
         discount_input = st.number_input(
             "Giảm giá thêm (%)", min_value=0, max_value=100, value=0, step=1,
@@ -548,9 +561,12 @@ with payment_tab:
         st.write(f"**Tổng tỷ lệ giảm giá:** {totals['percent_discount']:g}%")
         st.write(f"**Tiền giảm theo phần trăm:** {format_money(totals['percent_amount'])}")
         st.caption(totals["voucher_message"])
+        bogo_needs_two = (voucher_code or "").strip().upper() == "ZZZ1" and cart_quantity(st.session_state.cart) < 2
+        if bogo_needs_two:
+            st.warning("Để dùng Mua 1 tặng 1, bạn cần quay lại tab **Chọn món** và thêm ít nhất một ly nữa vào giỏ hàng.")
         st.markdown(f"### Tổng thanh toán: {format_money(totals['final_total'])}")
 
-        if st.button("📲 Tạo đơn hàng và hiện mã QR", type="primary", use_container_width=True):
+        if st.button("📲 Tạo đơn hàng và hiện mã QR", type="primary", use_container_width=True, disabled=bogo_needs_two):
             if not customer_name.strip():
                 st.warning("Vui lòng nhập tên khách hàng.")
             elif not st.session_state.cart:
@@ -838,4 +854,4 @@ st.divider()
 st.caption(
     "Tiệm trà ZZZ • QR Vietcombank là QR chuyển khoản. "
     "Doanh thu chỉ được ghi nhận sau khi Admin xác nhận thủ công."
-    )
+                                                    )
