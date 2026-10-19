@@ -190,8 +190,8 @@ def calculate_totals(cart, discount_percent=0, voucher_code=""):
                 f"Voucher {code} yêu cầu tối thiểu "
                 f"{voucher['min_quantity']} ly."
             )
-        elif voucher["type"] == "bogo":
-            bogo_discount = calculate_bogo_discount(cart)
+        elif voucher["type"] == "ZZ":
+            bogo_discount = calculate_ZZ_discount(cart)
             voucher_message = "Đã áp dụng voucher Mua 1 tặng 1."
         elif voucher["type"] == "percent":
             percent_discount += voucher["value"]
@@ -212,7 +212,7 @@ def calculate_totals(cart, discount_percent=0, voucher_code=""):
 
     return {
         "subtotal": subtotal,
-        "bogo_discount": bogo_discount,
+        "ZZ_discount": ZZ_discount,
         "percent_discount": percent_discount,
         "percent_amount": percent_amount,
         "final_total": final_total,
@@ -403,31 +403,26 @@ with payment_tab:
             st.session_state.lucky_prize = prize
 
             if prize == "Giảm 3%":
-                st.session_state.voucher_code = "BOBA3"
+                st.session_state.voucher_code = "ZZ3"
             elif prize == "Giảm 5% bill từ 2 ly":
-                st.session_state.voucher_code = "BOBA5"
+                st.session_state.voucher_code = "ZZ5"
             elif prize == "Mua 1 tặng 1":
-                st.session_state.voucher_code = "BOGO"
+                st.session_state.voucher_code = "ZZ1"
             else:
                 st.session_state.voucher_code = ""
 
             st.rerun()
 
         if st.session_state.lucky_prize:
-            if st.session_state.lucky_prize == "may mắn":
+            if st.session_state.lucky_prize == "chúc may mắn":
                 st.info("🍀 Chúc bạn may mắn lần sau!")
             else:
                 st.success(f"🎉 Bạn nhận được: {st.session_state.lucky_prize}")
-
-        st.caption(
-            "Mã voucher mẫu: BOBA3 (giảm 3%), BOBA5 (giảm 5% từ 2 ly), "
-            "BOGO (mua 1 tặng 1)."
-        )
-
+                
         voucher_code = st.text_input(
             "Mã voucher",
             key="voucher_code",
-            placeholder="Ví dụ: BOBA3",
+            placeholder="        ",
         )
 
         discount_input = st.number_input(
@@ -451,7 +446,7 @@ with payment_tab:
         st.write(f"**Tạm tính:** {format_money(totals['subtotal'])}")
         st.write(
             f"**Giảm giá Mua 1 tặng 1:** "
-            f"{format_money(totals['bogo_discount'])}"
+            f"{format_money(totals['ZZ_discount'])}"
         )
         st.write(
             f"**Tổng tỷ lệ giảm giá:** "
