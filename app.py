@@ -450,7 +450,7 @@ with payment_tab:
         )
         st.write(
             f"**Tổng tỷ lệ giảm giá:** "
-            f"{totals['percent_discount']:g}%"
+            f"{totals['percent_discount']:50}%"
         )
         st.write(
             f"**Tiền giảm theo phần trăm:** "
